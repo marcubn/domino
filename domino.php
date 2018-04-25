@@ -64,9 +64,7 @@ class Domino
         $this->firstMove();
 
         // play until one of the players has no cards in his hand and it's declared the winner
-        //while ($this->end == false) {
         $this->playRound();
-        //}
 
         var_dump($this->gameActions);
 

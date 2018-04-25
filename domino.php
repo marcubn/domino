@@ -1,4 +1,7 @@
 <?php
+$domino = new Domino();
+$domino->prepareGame();
+$domino->playGame();
 
 class Domino
 {
@@ -61,9 +64,9 @@ class Domino
         $this->firstMove();
 
         // play until one of the players has no cards in his hand and it's declared the winner
-        while ($this->end == false) {
-            $this->playRound();
-        }
+        //while ($this->end == false) {
+        $this->playRound();
+        //}
 
         var_dump($this->gameActions);
 
@@ -119,22 +122,25 @@ class Domino
         }
 
         if (!$endTurn && !empty($this->cards)) {
+            // draw a card and 'put it in hand'. Same player can continue the game
             $draw                 = array_splice($this->cards, 0, 1);
             $this->gameActions[]  = $currentPlayer . ' draws the card ' . $this->getCardName($draw[0]);
             $this->$currentPlayer = array_merge($this->$currentPlayer, $draw);
         } else {
+            // Pass the round to the other player
             $players = array_flip($this->players);
             unset($players[$currentPlayer]);
             $currentPlayer = key($players);
         }
 
-        if (empty($this->$currentPlayer)) {
+        // If current player has his hand empty -> he is the winner
+        if (!empty($this->$currentPlayer)) {
+            $this->currentPlayer = $currentPlayer;
+            $this->playRound();
+        } else {
             $this->end           = true;
             $this->gameActions[] = "Game Over. Player " . $this->currentPlayer . " won the game";
         }
-
-        $this->currentPlayer = $currentPlayer;
-
     }
 
     /**
@@ -153,25 +159,25 @@ class Domino
             // Card will go on the left of the pile
             $this->bottomPile     = array_merge([$value], $this->bottomPile);
             $this->bottomPileEnds = [$value[0], $bottomPileEnds[1]];
-            $this->playCard($value, $currentPlayer, $key);
+            $this->playCard($value, $currentPlayer, $key, 'left');
             $endTurn = true;
         } elseif ($value[1] == $bottomPileEnds[1]) {
             // Card will go on the right at the pile but flipped
             $this->bottomPile     = array_merge($this->bottomPile, [array_reverse($value)]);
             $this->bottomPileEnds = [$bottomPileEnds[0], $value[0]];
-            $this->playCard($value, $currentPlayer, $key);
+            $this->playCard($value, $currentPlayer, $key, 'right');
             $endTurn = true;
         } elseif ($value[0] == $bottomPileEnds[0]) {
             // Card will go at the left at the pile but flipped
             $this->bottomPile     = array_merge([array_reverse($value)], $this->bottomPile);
             $this->bottomPileEnds = [$value[1], $bottomPileEnds[1]];
-            $this->playCard($value, $currentPlayer, $key);
+            $this->playCard($value, $currentPlayer, $key, 'left');
             $endTurn = true;
         } elseif ($value[0] == $bottomPileEnds[1]) {
             // Card will go at the right of the pie
             $this->bottomPile     = array_merge($this->bottomPile, [$value]);
             $this->bottomPileEnds = [$bottomPileEnds[0], $value[1]];
-            $this->playCard($value, $currentPlayer, $key);
+            $this->playCard($value, $currentPlayer, $key, 'right');
             $endTurn = true;
         } else {
             $endTurn = false;
@@ -186,10 +192,11 @@ class Domino
      * @param $value
      * @param $currentPlayer
      * @param $key
+     * @param $position
      */
-    private function playCard($value, $currentPlayer, $key)
+    private function playCard($value, $currentPlayer, $key, $position)
     {
-        $this->gameActions[] = $currentPlayer . ' plays the card ' . $this->getCardName($value);
+        $this->gameActions[] = $currentPlayer . ' plays the card ' . $this->getCardName($value) . ' by adding it to the ' . $position . ' of the pile';
 
         $currentBoard = "";
         foreach ($this->bottomPile as $k => $item) {
